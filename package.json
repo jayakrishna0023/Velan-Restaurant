@@ -2,6 +2,7 @@
   "name": "velan",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "description": "Velan Biryani Center — customer ordering site, admin console and delivery partner app on one real-time API.",
   "workspaces": [
     "server",

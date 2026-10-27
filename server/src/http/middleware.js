@@ -20,11 +20,24 @@ export const requireRole = (...roles) => (req, _res, next) => {
   next();
 };
 
+export function getClientIp(req) {
+  try {
+    const forwarded = req.headers?.['x-forwarded-for'];
+    if (forwarded) return String(forwarded).split(',')[0].trim();
+    const realIp = req.headers?.['x-real-ip'];
+    if (realIp) return String(realIp).trim();
+    if (req.socket?.remoteAddress) return req.socket.remoteAddress;
+    return '127.0.0.1';
+  } catch {
+    return '127.0.0.1';
+  }
+}
+
 /** Small in-memory limiter for login and sign-up (per IP). */
 export function rateLimit({ windowMs = 10 * 60_000, max = 20 } = {}) {
   const hits = new Map();
   return (req, _res, next) => {
-    const key = req.ip;
+    const key = getClientIp(req);
     const now = Date.now();
     const h = hits.get(key);
     if (!h || h.reset < now) hits.set(key, { n: 1, reset: now + windowMs });
