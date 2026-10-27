@@ -78,10 +78,10 @@ CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders(created_at);
 CREATE INDEX IF NOT EXISTS orders_phone_idx ON orders(phone);
 
 -- 8. COUPONS
+DROP TABLE IF EXISTS coupons CASCADE;
 CREATE TABLE IF NOT EXISTS coupons (
   id TEXT PRIMARY KEY,
-  data JSONB NOT NULL,
-  active INTEGER GENERATED ALWAYS AS ((data->>'active')::integer) STORED
+  data JSONB NOT NULL
 );
 
 -- 9. SETTLEMENTS (Rider cash/payouts)
