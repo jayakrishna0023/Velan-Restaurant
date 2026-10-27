@@ -33,9 +33,13 @@ export const kv = {
     const row = prepared('SELECT value FROM kv WHERE key = ?').get(key);
     return row ? JSON.parse(row.value) : fallback;
   },
-  set(key, value) {
+  rawSet(key, value) {
     prepared('INSERT INTO kv(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
       .run(key, JSON.stringify(value));
+    return value;
+  },
+  set(key, value) {
+    this.rawSet(key, value);
     syncToSupabase('kv', { key, value });
     return value;
   },
@@ -82,9 +86,13 @@ export function collection(name, indexed = {}) {
       syncToSupabase(name, doc);
       return doc;
     },
-    put(doc) {
+    rawPut(doc) {
       prepared(`INSERT INTO ${name}(id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`)
         .run(doc.id, JSON.stringify(doc));
+      return doc;
+    },
+    put(doc) {
+      this.rawPut(doc);
       syncToSupabase(name, doc);
       return doc;
     },

@@ -46,17 +46,44 @@ export function useSocketEvent(event, handler) {
   }, [event, s]);
 }
 
-/** Whether the live connection is up (shows the "reconnecting" banner). */
+/** Whether the live connection or network is up (shows the "reconnecting" banner only if truly offline or lost active socket). */
 export function useConnected() {
   const s = useSocketInstance();
   const [ok, setOk] = useState(true);
+
   useEffect(() => {
-    const fn = (v) => setOk(v);
-    statusListeners.add(fn);
-    let timer;
-    // Give the first connection a moment before showing "offline".
-    if (s && !s.connected) timer = setTimeout(() => setOk(s.connected), 2500);
-    return () => { statusListeners.delete(fn); clearTimeout(timer); };
+    const handleOnline = () => setOk(true);
+    const handleOffline = () => setOk(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    let hadSocketConnection = false;
+    const onConnect = () => {
+      hadSocketConnection = true;
+      setOk(true);
+    };
+    const onDisconnect = () => {
+      // If we previously had a working live socket and lost it, or browser is offline
+      if (hadSocketConnection || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+        setOk(false);
+      }
+    };
+
+    if (s) {
+      s.on('connect', onConnect);
+      s.on('disconnect', onDisconnect);
+      if (s.connected) onConnect();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (s) {
+        s.off('connect', onConnect);
+        s.off('disconnect', onDisconnect);
+      }
+    };
   }, [s]);
+
   return ok;
 }

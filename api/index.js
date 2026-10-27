@@ -1,14 +1,29 @@
 import { app } from '../server/src/app.js';
+import { db, kv } from '../server/src/db/database.js';
+import { pullFromSupabase } from '../server/src/db/supabase.js';
 import { seedIfEmpty } from '../server/src/db/seed.js';
 
-// Ensure data is seeded on cold start if database is empty
-try {
-  seedIfEmpty();
-} catch (e) {
-  // Non-fatal
+let readyPromise = null;
+async function ensureReady() {
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      try {
+        const synced = await pullFromSupabase(db, kv);
+        if (!synced) {
+          seedIfEmpty();
+        }
+      } catch (err) {
+        console.error('[API Cold Start] Sync error:', err);
+        try { seedIfEmpty(); } catch {}
+      }
+    })();
+  }
+  return readyPromise;
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
+  await ensureReady();
+
   // In Vercel serverless functions, req.url may have /api stripped by routing rewrites.
   // Ensure it has the /api prefix so Express /api router handles it correctly.
   if (req.url && !req.url.startsWith('/api')) {

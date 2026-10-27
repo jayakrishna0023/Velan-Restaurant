@@ -58,7 +58,8 @@ export async function pullFromSupabase(db, kv) {
 
     if (kvRows && kvRows.length) {
       for (const row of kvRows) {
-        kv.set(row.key, row.value);
+        if (kv.rawSet) kv.rawSet(row.key, row.value);
+        else kv.set(row.key, row.value);
       }
     }
 
@@ -69,7 +70,7 @@ export async function pullFromSupabase(db, kv) {
       const { data: rows, error } = await sb.from(name).select('*');
       if (error || !rows) continue;
       for (const row of rows) {
-        if (row.data) col.put(row.data);
+        if (row.data) (col.rawPut || col.put).call(col, row.data);
       }
     }
     console.log('[Supabase] Successfully synchronized with remote Supabase database.');
