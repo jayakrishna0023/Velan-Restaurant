@@ -48,9 +48,9 @@ export default function Header({ minimal, theme, setTheme }) {
   const user = useSession((s) => s.user);
   const { scrollY } = useScroll();
   const [solid, setSolid] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const headerRef = useRef(null);
   const onHome = pathname === '/';
   const label = (key) => (Array.isArray(key) ? tr(key[0], key[1]) : t(key));
 
@@ -65,22 +65,23 @@ export default function Header({ minimal, theme, setTheme }) {
     return () => window.removeEventListener('keydown', key);
   }, []);
 
-  // Hide after 50px of scrolling down and show after 50px back up. Comparing frame to frame
-  // flickered: a smooth scroll slows to a few pixels a frame and the header popped in and out.
-  const turn = useRef({ at: 0, hidden: false });
   useMotionValueEvent(scrollY, 'change', (y) => {
     setSolid(y > 40);
-    const s = turn.current;
-    let hide = s.hidden;
-    if (y < 600 || menuOpen) hide = false;
-    else if (!s.hidden && y > s.at + 50) hide = true;
-    else if (s.hidden && y < s.at - 50) hide = false;
-    // `at` is the turning point: the highest the page got while shown, the lowest while hidden.
-    if (hide !== s.hidden) { s.hidden = hide; s.at = y; setHidden(hide); } else s.at = hide ? Math.max(s.at, y) : Math.min(s.at, y);
   });
   useEffect(() => { setMenuOpen(false); }, [pathname]);
-  // Sticky bars below the header (the menu categories) follow it up and down.
-  useEffect(() => { document.documentElement.style.setProperty('--header-h', hidden ? '0px' : '60px'); }, [hidden]);
+
+  // Keep --header-h accurate so sticky bars and scroll offsets underneath align with zero gap or overlap.
+  useEffect(() => {
+    const updateH = () => {
+      if (headerRef.current) {
+        const h = Math.round(headerRef.current.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--header-h', `${h}px`);
+      }
+    };
+    updateH();
+    window.addEventListener('resize', updateH);
+    return () => window.removeEventListener('resize', updateH);
+  }, [solid]);
 
   const go = (id) => {
     setMenuOpen(false);
@@ -90,8 +91,7 @@ export default function Header({ minimal, theme, setTheme }) {
   return (
     <>
       <a href="#menu" className="skip-link" onClick={(e) => { e.preventDefault(); go('menu'); }}>{tr('Skip to the menu', 'மெனுவுக்குச் செல்')}</a>
-      <motion.header className={`site-header ${solid || !onHome ? 'solid' : ''}`}
-        animate={{ y: hidden ? -100 : 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
+      <header ref={headerRef} className={`site-header ${solid || !onHome ? 'solid' : ''}`}>
         <div className="container header-row">
           <Link to="/" className="header-brand" aria-label="Velan Biryani Center" onClick={() => onHome && scrollToTarget(0)}>
             <Sign />
@@ -136,7 +136,7 @@ export default function Header({ minimal, theme, setTheme }) {
             )}
           </div>
         </div>
-      </motion.header>
+      </header>
 
       <AnimatePresence>
         {menuOpen && (

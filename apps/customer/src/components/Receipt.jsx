@@ -45,7 +45,7 @@ export default function Receipt() {
   const checkout = () => requireLogin(() => navigate('/checkout'), 'register');
 
   return (
-    <aside ref={ref} className="rcpt" aria-label={tr('Your order', 'உங்கள் ஆர்டர்')}>
+    <aside ref={ref} className="rcpt" aria-label={tr('Your order', 'உங்கள் ஆர்டர்')} data-lenis-prevent>
       <motion.div className="rcpt-paper" animate={feed} data-plate-target>
         <header className="rcpt-head">
           <b>VELAN BIRYANI CENTER</b>

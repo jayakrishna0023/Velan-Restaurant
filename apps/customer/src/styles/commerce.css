@@ -75,13 +75,17 @@
 .order-pill-cta { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 2px; background: rgba(241, 236, 226, 0.1); color: #f1ece2; font-weight: 700; font-size: 12.5px; }
 
 /* ---------- auth ---------- */
-.auth-modal { overflow: hidden !important; }
+.auth-modal {
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .auth-modal .dialog-body { padding: 0; }
-.auth-hero { position: relative; isolation: isolate; display: grid; justify-items: center; gap: 6px; padding: 34px 24px 18px; text-align: center; background: var(--gradient-night); color: var(--ivory-100); }
-.auth-hero h3 { font-size: 34px; font-weight: 400; margin-top: 10px; }
+.auth-hero { position: relative; isolation: isolate; display: grid; justify-items: center; gap: 6px; padding: 28px 24px 16px; text-align: center; background: var(--gradient-night); color: var(--ivory-100); }
+.auth-hero h3 { font-size: 30px; font-weight: 400; margin-top: 8px; }
 .auth-alt { font-family: var(--font-script); color: var(--gold-300); font-size: 15px; }
 .auth-hero svg:last-child { color: var(--gold-500); margin-top: 4px; }
-.auth-body { padding: 22px 26px 26px; display: grid; gap: 18px; }
+.auth-body { padding: 20px 24px 24px; display: grid; gap: 16px; }
 .auth-seg { width: 100%; }
 .auth-seg button { flex: 1; }
 .auth-form { display: grid; gap: 14px; }
@@ -91,6 +95,40 @@
 .auth-switch { text-align: center; font-size: 13.5px; }
 .auth-switch button { font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 [data-theme='dark'] .auth-switch button { color: var(--gold-300); }
+
+@media (max-width: 640px) {
+  .dialog-wrap {
+    padding: 12px;
+    align-items: center;
+  }
+  .dialog.auth-modal {
+    max-height: calc(100dvh - 24px) !important;
+    border-radius: 16px;
+    margin: auto 0;
+  }
+  .auth-hero {
+    padding: 18px 16px 12px;
+    gap: 4px;
+  }
+  .auth-hero h3 {
+    font-size: 22px;
+    margin-top: 4px;
+  }
+  .auth-alt {
+    font-size: 13px;
+  }
+  .auth-body {
+    padding: 16px 18px 20px;
+    gap: 14px;
+  }
+  .auth-form {
+    gap: 12px;
+  }
+  .auth-form .btn-lg {
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
 
 /* ---------- checkout ---------- */
 .co-top { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; flex-wrap: wrap; }

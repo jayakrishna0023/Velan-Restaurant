@@ -65,6 +65,19 @@ export default function MenuSection() {
   const [vegOnly, setVegOnly] = useState(false);
   const [active, setActive] = useState(null);
   const bar = useRef(null);
+  const barWrapRef = useRef(null);
+
+  useEffect(() => {
+    const updateBarH = () => {
+      if (barWrapRef.current) {
+        const h = Math.round(barWrapRef.current.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--menu-bar-h', `${h}px`);
+      }
+    };
+    updateBarH();
+    window.addEventListener('resize', updateBarH);
+    return () => window.removeEventListener('resize', updateBarH);
+  }, []);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(() => items.filter((i) => (!vegOnly || i.veg)
@@ -79,10 +92,13 @@ export default function MenuSection() {
   useEffect(() => {
     const els = groups.map((g) => document.getElementById(`cat-${g.cat.id}`)).filter(Boolean);
     if (!els.length) return undefined;
+    const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 72;
+    const menuBarH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menu-bar-h')) || 58;
+    const topMargin = -(headerH + menuBarH + 20);
     const io = new IntersectionObserver((entries) => {
       const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
       if (vis) setActive(vis.target.id.slice(4));
-    }, { rootMargin: '-140px 0px -60% 0px' });
+    }, { rootMargin: `${topMargin}px 0px -60% 0px` });
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,12 +122,12 @@ export default function MenuSection() {
         <p className="menu-note"><span className="live-dot" />{tr('Counts are live from the kitchen. When a handi is finished, it is finished.', 'எண்ணிக்கை சமையலறையிலிருந்து நேரலையில். அண்டா தீர்ந்தால், தீர்ந்ததுதான்.')}</p>
       </div>
 
-      <div className="menu-bar-wrap">
+      <div className="menu-bar-wrap" ref={barWrapRef}>
         <div className="container menu-bar">
           <div className="menu-cats" ref={bar} role="tablist">
             {groups.map((g) => (
               <button key={g.cat.id} type="button" role="tab" data-cat={g.cat.id} aria-selected={active === g.cat.id}
-                className="menu-cat" onClick={() => scrollToTarget(`cat-${g.cat.id}`, -150)}>
+                className="menu-cat" onClick={() => scrollToTarget(`cat-${g.cat.id}`)}>
                 <span>{pick(g.cat, 'name')}</span>
                 {active === g.cat.id && <motion.span layoutId="menu-cat-line" className="menu-cat-line" transition={spring} />}
               </button>

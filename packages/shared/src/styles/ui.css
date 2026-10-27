@@ -141,9 +141,10 @@ html[lang='ta'] .btn.btn-caps { font-size: 13.5px; letter-spacing: 0; text-trans
 
 /* ---------- dialogs ---------- */
 .overlay { position: fixed; inset: 0; z-index: 900; background: rgba(15, 8, 5, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.dialog-wrap { position: fixed; inset: 0; z-index: 901; display: grid; place-items: center; padding: 20px; pointer-events: none; }
+.dialog-wrap { position: fixed; inset: 0; z-index: 901; display: grid; place-items: center; padding: 20px; pointer-events: none; overflow-y: auto; overscroll-behavior: contain; }
 .dialog {
-  pointer-events: auto; position: relative; width: min(520px, 100%); max-height: calc(100dvh - 40px); overflow: auto;
+  pointer-events: auto; position: relative; width: min(520px, 100%); max-height: calc(100dvh - 40px); overflow-y: auto;
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   background: var(--bg-elev); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--line);
 }
 .dialog-head { display: flex; align-items: center; gap: 12px; padding: 20px 22px 6px; }

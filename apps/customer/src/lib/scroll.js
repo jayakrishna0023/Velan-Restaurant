@@ -12,15 +12,18 @@ export function startSmoothScroll() {
   return () => { cancelAnimationFrame(raf); lenis?.destroy(); lenis = null; };
 }
 
-/** Scroll to an element id or y position, offsetting the sticky header. */
-export function scrollToTarget(target, offset = -88) {
+/** Scroll to an element id or y position, offsetting the sticky header and category bar. */
+export function scrollToTarget(target, offset = null) {
   const el = typeof target === 'string' ? document.getElementById(target) : null;
+  const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 72;
+  const menuBarH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--menu-bar-h')) || 58;
+  const finalOffset = offset !== null ? offset : -(headerH + menuBarH + 20);
   if (lenis) {
-    lenis.scrollTo(el || target, { offset, duration: 1.3 });
+    lenis.scrollTo(el || target, { offset: finalOffset, duration: 1.1 });
     return;
   }
-  const y = el ? el.getBoundingClientRect().top + window.scrollY + offset : target;
-  window.scrollTo({ top: y, behavior: 'smooth' });
+  const y = el ? el.getBoundingClientRect().top + window.scrollY + finalOffset : target;
+  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
 }
 
 /** Jump straight to the top (a new page). Going through Lenis stops a glide that is still running from pulling the page back down. */

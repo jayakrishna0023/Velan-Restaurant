@@ -70,11 +70,12 @@ export function Modal({ open, onClose, title, children, footer, width = 520, cla
       {open && (
         <>
           <motion.div className="overlay" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
-          <div className="dialog-wrap">
+          <div className="dialog-wrap" data-lenis-prevent>
             <motion.div role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined}
               className={`dialog ${className}`} style={{ width: `min(${width}px, 100%)` }}
               initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.18 } }}
-              transition={softSpring}>
+              transition={softSpring}
+              data-lenis-prevent>
               {title !== undefined && (
                 <div className="dialog-head">
                   <h3>{title}</h3>

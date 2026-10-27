@@ -39,7 +39,7 @@ export default function AuthModal() {
     <Modal open={open} onClose={() => session.set({ authOpen: false, afterAuth: null })} width={440} className="auth-modal">
       <div className="auth-hero">
         <motion.div initial={{ scale: 0.6, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 14 }}>
-          <VelSeal size={104} draw />
+          <VelSeal size={80} draw />
         </motion.div>
         <h3 className="display">{mode === 'login' ? t('welcomeBack') : tr('Join the Velan family', 'வேலன் குடும்பத்தில் இணையுங்கள்')}</h3>
         <p className="auth-alt">{mode === 'login' ? 'மீண்டும் வருக · Welcome back' : 'வணக்கம் · Vanakkam'}</p>
