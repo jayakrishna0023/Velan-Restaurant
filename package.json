@@ -19,7 +19,13 @@
     "reset": "npm run reset -w server"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "concurrently": "^9.2.5"
