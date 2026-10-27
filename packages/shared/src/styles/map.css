@@ -1,0 +1,48 @@
+.vmap { overflow: hidden; border-radius: var(--radius); background: var(--bg-sunken); isolation: isolate; }
+.vmap .leaflet-container { width: 100%; height: 100%; border-radius: inherit; }
+.vmap-layer {
+  position: absolute; z-index: 500; top: 12px; right: 12px; width: 38px; height: 38px; border-radius: 12px;
+  display: grid; place-items: center; background: var(--bg-elev); color: var(--ink); box-shadow: var(--shadow);
+}
+
+.vpicker { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--bg-sunken); isolation: isolate; }
+.vpicker-map { border-radius: 0; }
+.vpicker-search { position: absolute; z-index: 600; top: 12px; left: 12px; right: 12px; }
+.vpicker-search .input { background: var(--bg-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: var(--shadow); border-color: transparent; }
+.vpicker-results { margin-top: 6px; background: var(--bg-elev); border-radius: 14px; box-shadow: var(--shadow-lg); overflow: hidden; max-height: 220px; overflow-y: auto; }
+.vpicker-results li { border-bottom: 1px solid var(--line); padding: 2px; }
+.vpicker-results li.subtle { padding: 12px 14px; }
+.vpicker-results button { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+.vpicker-results button:hover { background: var(--bg-sunken); }
+.vpicker-results svg { flex: none; margin-top: 2px; color: var(--accent); }
+.vpicker-pin { position: absolute; z-index: 550; left: 50%; top: 50%; transform: translate(-50%, -100%); pointer-events: none; transition: transform 0.25s var(--ease-out); }
+.vpicker-pin .vpin { transition: transform 0.25s var(--ease-spring); }
+.vpicker-pin.up .vpin { transform: translateY(-12px); }
+.vpicker-shadow { position: absolute; left: 50%; bottom: -8px; width: 16px; height: 6px; margin-left: -8px; border-radius: 50%; background: rgba(0, 0, 0, 0.35); filter: blur(1px); transition: transform 0.25s, opacity 0.25s; }
+.vpicker-pin.up .vpicker-shadow { transform: scale(0.6); opacity: 0.5; }
+.vpicker-tools { position: absolute; z-index: 600; right: 12px; bottom: 56px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.vpicker-tool { background: var(--bg-elev); color: var(--ink); box-shadow: var(--shadow); }
+.vpicker-foot {
+  position: absolute; z-index: 600; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--bg-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line);
+}
+.vpicker-linkhit { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 6px; padding: 10px 12px; border-radius: 10px; text-align: left; font-size: 13px; font-weight: 600; background: var(--bg-elev); color: var(--ink); box-shadow: var(--shadow-lg); }
+.vpicker-linkhit svg:last-child { margin-left: auto; }
+.vpicker-linkhit svg:first-child { color: var(--accent); }
+.vpicker-foot > span.vpicker-problem { white-space: normal; display: flex; gap: 6px; align-items: flex-start; font-size: 12px; line-height: 1.4; color: var(--danger); }
+.vpicker-problem svg { flex: none; margin-top: 1px; }
+.vpicker-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.vpicker-pulse { width: 10px; height: 10px; flex: none; border-radius: 50%; background: #2f6fdb; animation: pulse-ring 1.2s infinite; color: rgba(47, 111, 219, 0.5); }
+.vpicker-acc { display: inline-block; margin-right: 8px; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; background: #2f6fdb; }
+.vpicker-acc.acc-rough, .vpicker-acc.acc-poor { background: #c77700; }
+.vpicker-foot > span { font-size: 12px; }
+/* "Is this your delivery location?" card that rises over the map after GPS finds the customer. */
+.vpicker-ask { position: absolute; z-index: 700; left: 12px; right: 12px; bottom: 54px; display: grid; gap: 7px; padding: 14px 16px;
+  border-radius: 14px; background: var(--bg-elev); color: var(--ink); border: 2.5px solid var(--outline, var(--line-strong)); box-shadow: 4px 4px 0 var(--hard, rgba(0, 0, 0, 0.3)); }
+.vpicker-ask-title { font-family: var(--font-poster, inherit); font-weight: 800; font-size: 17px; line-height: 1.2; }
+.vpicker-ask-place { display: flex; gap: 6px; align-items: flex-start; font-size: 13.5px; font-weight: 600; line-height: 1.4; color: var(--ink-2); }
+.vpicker-ask-place svg { flex: none; margin-top: 2px; color: var(--chilli, var(--accent)); }
+.vpicker-ask .vpicker-acc { justify-self: start; margin: 0; white-space: normal; line-height: 1.4; }
+.vpicker-ask-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; }
+.vpicker-ask-actions .btn { flex: 1 1 140px; }
+.vpicker-foot > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,0 +1,27 @@
+{
+  "name": "velan",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Velan Biryani Center — customer ordering site, admin console and delivery partner app on one real-time API.",
+  "workspaces": [
+    "server",
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,site,admin,rider -c yellow,magenta,cyan,green \"npm:dev:server\" \"npm:dev:customer\" \"npm:dev:admin\" \"npm:dev:delivery\"",
+    "dev:server": "npm run dev -w server",
+    "dev:customer": "npm run dev -w apps/customer",
+    "dev:admin": "npm run dev -w apps/admin",
+    "dev:delivery": "npm run dev -w apps/delivery",
+    "build": "npm run build -w apps/customer && npm run build -w apps/admin && npm run build -w apps/delivery",
+    "start": "npm start -w server",
+    "reset": "npm run reset -w server"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}

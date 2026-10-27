@@ -1,0 +1,101 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern', 'liga';
+}
+html[lang='ta'] body { font-size: 14.5px; line-height: 1.65; }
+img, svg, video, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, h5, p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+::selection { background: rgba(171, 134, 70, 0.28); }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 2px; }
+input::placeholder, textarea::placeholder { color: var(--ink-3); opacity: 1; }
+
+/* Display type: Cormorant Garamond at book weights. Light weights and a
+   little negative tracking read as refined; Tamil falls back to Noto Serif
+   Tamil, which needs more leading. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.04;
+  font-variant-numeric: lining-nums;
+}
+html[lang='ta'] .display { letter-spacing: 0; line-height: 1.38; font-weight: 500; }
+.tamil { font-family: var(--font-tamil); }
+/* Small spaced capitals for labels and navigation. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-caps);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+html[lang='ta'] .eyebrow { letter-spacing: 0.02em; font-size: 12.5px; font-weight: 500; }.muted { color: var(--ink-2); }
+.subtle { color: var(--ink-3); }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.gold-text {
+  background: var(--text-foil);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.row { display: flex; align-items: center; gap: 10px; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.grow { flex: 1; min-width: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Athangudi tile line texture for backgrounds (use with low opacity).
+   The class keeps its old name so every app picks the new motif up. */
+.kolam-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ECB43A' stroke-width='1.2' stroke-opacity='.75'%3E%3Crect x='17' y='17' width='22' height='22'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3Ccircle cx='28' cy='28' r='5'/%3E%3Cpath d='M0 11a11 11 0 0 0 11-11M45 0a11 11 0 0 0 11 11M56 45a11 11 0 0 0-11 11M11 56A11 11 0 0 0 0 45'/%3E%3C/g%3E%3Cg fill='%23ECB43A' fill-opacity='.8'%3E%3Ccircle cx='28' cy='28' r='1.6'/%3E%3Ccircle cx='0' cy='0' r='2'/%3E%3Ccircle cx='56' cy='0' r='2'/%3E%3Ccircle cx='0' cy='56' r='2'/%3E%3Ccircle cx='56' cy='56' r='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 56px;
+}
+
+/* Thin scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  100% { box-shadow: 0 0 0 10px transparent; opacity: 1; }
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes steam {
+  0% { transform: translateY(0) scaleX(1); opacity: 0; }
+  20% { opacity: 0.55; }
+  100% { transform: translateY(-90px) scaleX(1.8); opacity: 0; }
+}
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes ring-alarm {
+  0%, 100% { transform: rotate(0); }
+  10%, 30%, 50% { transform: rotate(-12deg); }
+  20%, 40% { transform: rotate(12deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

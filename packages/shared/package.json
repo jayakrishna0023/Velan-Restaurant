@@ -1,0 +1,16 @@
+{
+  "name": "@velan/shared",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./vite": "./vite.preset.js",
+    "./*": "./src/*"
+  },
+  "peerDependencies": {
+    "framer-motion": "*",
+    "leaflet": "*",
+    "react": "*",
+    "socket.io-client": "*"
+  }
+}

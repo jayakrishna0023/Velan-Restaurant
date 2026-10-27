@@ -1,0 +1,132 @@
+/* The console in the Velan street-poster style, on top of the shared poster kit:
+   an ink sidebar with the painted sign, cream pages, outlined panels with hard
+   shadows and signboard headings. Data stays in the plain reading face. */
+
+/* ---------- shell ---------- */
+.kolam-night, [data-theme='dark'] .kolam-night { background: #17110e; color: rgba(255, 248, 234, 0.82); }
+.sidebar { border-right: 3px solid var(--chilli); }
+.sb-brand { border-bottom: 2px dashed rgba(245, 179, 35, 0.4); margin: 0 14px 12px; padding: 20px 4px 16px; }
+.sidebar.collapsed .sb-brand { margin: 0 8px 12px; }
+.sb-collapsed-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--chilli); border: 2.5px solid #fff8ea; rotate: -3deg; }
+.sb-group-label { font-family: var(--font-poster); font-weight: 800; font-stretch: 85%; font-size: 12px; letter-spacing: 0.14em; color: var(--turmeric); }
+html[lang='ta'] .sb-group-label { font-family: var(--font-poster-ta); letter-spacing: 0; }
+.sb-link { border-radius: 10px; font-family: var(--font-poster); font-weight: 700; font-stretch: 92%; font-size: 15.5px; color: rgba(255, 248, 234, 0.78); }
+html[lang='ta'] .sb-link { font-family: var(--font-poster-ta); font-size: 14px; }
+.sb-link:hover { color: #fff8ea; background: rgba(255, 248, 234, 0.07); }
+.sb-link.active, .sb-link.active svg { color: #fff8ea; }
+.sb-active { border-radius: 10px; background: var(--chilli); box-shadow: 3px 3px 0 #000, inset 0 0 0 2px #fff8ea; }
+.sb-active::before { display: none; }
+.sb-badge { background: var(--turmeric); color: #17110e; font-weight: 800; }
+.sb-badge.hot { background: #fff8ea; color: var(--chilli); }
+.sb-sep { background: rgba(255, 248, 234, 0.14); }
+.sb-foot { border-top: 2px dashed rgba(245, 179, 35, 0.35); }
+.sb-collapse { background: var(--chilli); color: #fff8ea; border: 2px solid #fff8ea; }
+.store-switch { border-radius: 12px; border: 2px solid currentColor; font-family: var(--font-poster); font-weight: 800; font-stretch: 90%; font-size: 14px; }
+html[lang='ta'] .store-switch { font-family: var(--font-poster-ta); font-size: 13px; }
+.store-switch:not(.off):not(.unknown) { background: var(--leafy); color: #fff8ea; border-color: #fff8ea; }
+.store-switch.off { background: var(--chilli); color: #fff8ea; border-color: #fff8ea; }
+.ss-track { box-shadow: inset 0 0 0 2px #fff8ea; background: rgba(0, 0, 0, 0.25); }
+.store-switch.off .ss-track { background: rgba(0, 0, 0, 0.25); }
+
+.topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 2.5px solid var(--outline); }
+.tb-title { font-family: var(--font-poster); font-weight: 800; font-stretch: 82%; font-size: 21px; text-transform: uppercase; letter-spacing: 0.02em; }
+html[lang='ta'] .tb-title { font-family: var(--font-poster-ta); text-transform: none; font-size: 17px; }
+.tb-search { border-radius: 10px; background: var(--bg-elev); border: 2px solid var(--line-strong); }
+.tb-search:hover { border-color: var(--outline); }
+.tb-dot { background: var(--chilli); border-color: var(--bg); }
+.mnav { background: #17110e; border: 2.5px solid #fff8ea; border-radius: 16px; box-shadow: 4px 4px 0 var(--chilli); }
+.mnav-item.on { color: #fff8ea; }
+.mnav-pill { background: var(--chilli); border-radius: 10px; }
+.mnav-item.primary svg { background: var(--turmeric); color: #17110e; border: 2.5px solid #17110e; box-shadow: 3px 3px 0 #000; }
+.mnav-badge { background: var(--turmeric); color: #17110e; font-weight: 800; }
+
+/* ---------- page heads ---------- */
+.page-title { font-family: var(--font-poster); font-weight: 800; font-stretch: 78%; font-size: clamp(40px, 4vw, 60px); line-height: 0.92; text-transform: uppercase; letter-spacing: -0.005em; }
+html[lang='ta'] .page-title { font-family: var(--font-poster-ta); font-weight: 800; text-transform: none; font-size: clamp(28px, 2.8vw, 38px); line-height: 1.25; }
+.page-sub { font-weight: 500; }
+
+/* ---------- panels, KPIs, stats ---------- */
+.panel, .kpi, .statpill, .dish-row, .board-col, .ticket, .rider-card, .coupon, .review-card, .report-card, .settings-body, .table-wrap, .pos-ticket, .live-panel, .map-side, .cust-hero, .ledger-hero {
+  border: 2.5px solid var(--outline); box-shadow: 5px 5px 0 var(--hard);
+}
+.panel, .kpi, .board-col, .ticket, .rider-card, .coupon, .review-card, .report-card, .settings-body, .table-wrap, .pos-ticket, .live-panel, .map-side, .cust-hero, .ledger-hero { border-radius: 16px; }
+.statpill, .dish-row { border-radius: 12px; box-shadow: 3px 3px 0 var(--hard); }
+.dish-row:hover { box-shadow: 5px 5px 0 var(--hard); border-color: var(--outline); }
+.dish-row.is-selected { border-color: var(--chilli); box-shadow: 5px 5px 0 var(--chilli); }
+.panel-head h3, .menu-cat-head h3, .board-col-head h3, .map-side-head h3, .sheet-head h3, .settings-title {
+  font-family: var(--font-poster); font-weight: 800; font-stretch: 82%; text-transform: uppercase; letter-spacing: 0.01em;
+}
+.panel-head h3 { font-size: 20px; }
+.menu-cat-head h3 { font-size: 32px; }
+html[lang='ta'] .panel-head h3, html[lang='ta'] .menu-cat-head h3, html[lang='ta'] .board-col-head h3, html[lang='ta'] .sheet-head h3, html[lang='ta'] .settings-title {
+  font-family: var(--font-poster-ta); text-transform: none;
+}
+.panel-icon { background: var(--turmeric); color: #17110e; border: 2px solid var(--outline); }
+.panel-icon.pulse { background: var(--chilli); color: #fff8ea; border-color: var(--outline); }
+.kpi:hover { box-shadow: 7px 7px 0 var(--hard); }
+.kpi-label { font-family: var(--font-poster); font-weight: 800; font-stretch: 88%; font-size: 12.5px; letter-spacing: 0.1em; color: var(--ink-2); }
+html[lang='ta'] .kpi-label { font-family: var(--font-poster-ta); }
+.kpi-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--turmeric); color: #17110e; border: 2px solid var(--outline); }
+.kpi.tone-maroon .kpi-icon { background: var(--chilli); color: #fff8ea; }
+.kpi.tone-leaf .kpi-icon { background: var(--leafy); color: #fff8ea; }
+.kpi-value, .donut-center b, .os-number, .ocard-num, .ticket-num, .coupon-value, .report-card b, .rs-big, .display.num {
+  font-family: var(--font-poster); font-weight: 800; font-stretch: 85%; letter-spacing: 0;
+}
+.kpi-value { font-size: 40px; }
+.kpi-bottom { border-top: 2px dashed var(--line-strong); }
+.statpill b { font-family: var(--font-poster); font-weight: 800; font-size: 20px; }
+
+/* ---------- charts ---------- */
+.chart-col { fill: var(--turmeric); stroke: var(--outline); stroke-width: 1.5; }
+.chart-col.on, [data-theme='dark'] .chart-col.on { fill: var(--chilli); }
+.chart-dot { stroke: var(--chilli); }
+.chart-tip { background: #17110e; border: 2px solid #fff8ea; border-radius: 10px; box-shadow: 3px 3px 0 var(--chilli); }
+.chart-tip b { color: var(--turmeric); }
+.heat-cell:hover { outline-color: var(--chilli); }
+.heat-scale i { background: var(--chilli); }
+.barlist-track { height: 9px; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.barlist-fill { background: var(--chilli); }
+.sw.gold { background: var(--chilli); }
+
+/* ---------- live board, kitchen, orders ---------- */
+.board-col { background: var(--bg-sunken); }
+.col-count { background: var(--chilli); color: #fff8ea; border: 2px solid var(--outline); font-family: var(--font-poster); font-weight: 800; }
+.ocard { border: 2px solid var(--outline); border-radius: 12px; box-shadow: 3px 3px 0 var(--hard); }
+.ocard-num { font-size: 22px; }
+.ticket-num { font-size: 40px; }
+.ready-timer { border: 1.5px solid currentColor; font-weight: 800; }
+.rider-select { border: 1.5px solid currentColor; border-radius: 8px; }
+.table thead th { font-family: var(--font-poster); font-weight: 800; font-stretch: 88%; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--turmeric); border-bottom: 2.5px solid var(--outline); }
+html[lang='ta'] .table thead th { font-family: var(--font-poster-ta); text-transform: none; }
+.os-otp { border: 2px dashed var(--chilli); background: var(--bg-elev); }
+.os-otp b { color: var(--chilli); font-family: var(--font-poster); font-weight: 800; }
+.os-actions { border: 2px solid var(--line-strong); border-radius: 12px; }
+.os-address { border: 2px solid var(--line-strong); border-radius: 12px; }
+
+/* ---------- menu tools ---------- */
+.flag { border-radius: 999px; border: 1.5px solid var(--line-strong); font-weight: 700; }
+.flag.on { background: var(--turmeric); border-color: var(--outline); color: #17110e; }
+.dish-check span { border-radius: 6px; border-color: var(--outline); }
+.dish-check input:checked + span { background: var(--chilli); border-color: var(--outline); }
+.dish-check input:checked + span::after { border-color: #fff8ea; }
+.dish-thumb { border: 2px solid var(--outline); border-radius: 10px; }
+.price-input { border: 2px solid var(--line-strong); border-radius: 8px; }
+.stock-bar { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.stepper { background: var(--bg-sunken); box-shadow: inset 0 0 0 2px var(--line-strong); }
+.bulk-bar, .save-bar { background: #17110e; border: 2.5px solid #fff8ea; border-radius: 16px; box-shadow: 5px 5px 0 var(--chilli); }
+.menu-cat-empty { border-color: var(--outline); }
+.cat-list li { border: 2px solid var(--line-strong); }
+.photo-drop { border: 2.5px dashed var(--outline); border-radius: 14px; }
+.coupon-code { font-family: var(--font-mono); }
+
+/* ---------- login ---------- */
+.login-form-side { background: var(--bg); }
+.login-title { font-family: var(--font-poster); font-weight: 800; font-stretch: 80%; text-transform: uppercase; font-size: 64px; line-height: 0.92; }
+html[lang='ta'] .login-title { font-family: var(--font-poster-ta); text-transform: none; font-size: 42px; line-height: 1.25; }
+.login-art .sign { margin-bottom: 26px; }
+.login-points span { background: var(--turmeric); color: #17110e; border: 2px solid #fff8ea; }
+.login-divider { height: 3px; background: var(--chilli); }
+
+/* The palette and print views keep their own look. */
+.palette { border: 3px solid var(--outline); border-radius: 18px; box-shadow: 8px 8px 0 var(--hard); }
+.palette-icon { background: var(--turmeric); color: #17110e; border: 2px solid var(--outline); }

@@ -1,0 +1,15 @@
+{
+  "name": "Velan Delivery",
+  "short_name": "Velan Delivery",
+  "description": "Delivery partner app for Velan Biryani Center · வேலன் டெலிவரி",
+  "start_url": "/delivery/",
+  "scope": "/delivery/",
+  "display": "standalone",
+  "background_color": "#17110e",
+  "theme_color": "#17110e",
+  "icons": [
+    { "src": "/delivery/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/delivery/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/delivery/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
