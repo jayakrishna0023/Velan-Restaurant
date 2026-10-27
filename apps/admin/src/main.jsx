@@ -10,10 +10,12 @@ import './styles/pages.css';
 import '@velan/shared/styles/poster-kit.css';
 import './styles/poster.css';
 
+const basename = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin') ? '/admin' : '/';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <LangProvider dict={COPY}>
-      <BrowserRouter basename="/admin">
+      <BrowserRouter basename={basename}>
         <App />
       </BrowserRouter>
     </LangProvider>

@@ -9,10 +9,18 @@ export class ApiError extends Error {
   }
 }
 
+export function getApiBase() {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  }
+  return '';
+}
+
 export function createApi(tokenKey) {
   let token = null;
   try { token = localStorage.getItem(tokenKey); } catch { /* private mode */ }
   const listeners = new Set();
+  const apiBase = getApiBase();
 
   const setToken = (t) => {
     token = t || null;
@@ -23,7 +31,7 @@ export function createApi(tokenKey) {
   async function request(method, path, body) {
     let res;
     try {
-      res = await fetch(`/api${path}`, {
+      res = await fetch(`${apiBase}/api${path}`, {
         method,
         headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: body !== undefined ? JSON.stringify(body) : undefined,

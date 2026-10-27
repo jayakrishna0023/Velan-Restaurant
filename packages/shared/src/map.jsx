@@ -9,6 +9,7 @@ import { parseLocationText, isShortMapLink, locateBest, accuracyLevel } from './
 import { useLang } from './i18n.jsx';
 import { useDebounced } from './hooks.js';
 import { Icon } from './components/Icon.jsx';
+import { getApiBase } from './api.js';
 
 export const TILES = {
   street: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '© OpenStreetMap', maxZoom: 19 },
@@ -401,7 +402,8 @@ export function LocationPicker({ value, onChange, origin, zone, height = 320, au
     if (parsed) { nextSource.current = 'link'; goTo(map.current, parsed); setQuery(''); return; }
     setBusy('link');
     try {
-      const r = await fetch(`/api/geo/resolve?url=${encodeURIComponent(debounced.trim())}`);
+      const apiBase = getApiBase();
+      const r = await fetch(`${apiBase}/api/geo/resolve?url=${encodeURIComponent(debounced.trim())}`);
       if (!r.ok) throw new Error('link');
       const p = await r.json();
       nextSource.current = 'link';

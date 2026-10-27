@@ -4,8 +4,9 @@ import react from '@vitejs/plugin-react';
 
 export function velanApp({ base, port }) {
   const api = process.env.VELAN_API || 'http://localhost:4000';
+  const effectiveBase = process.env.VITE_BASE || './';
   return {
-    base,
+    base: effectiveBase,
     plugins: [react()],
     resolve: { dedupe: ['react', 'react-dom', 'framer-motion', 'leaflet', 'socket.io-client'] },
     server: {

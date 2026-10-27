@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/admin/assets/(.*)", "destination": "/apps/admin/dist/assets/$1" },
+    { "source": "/admin/(.*\\.(?:js|css|ico|png|svg|webmanifest|json|jpg|jpeg|webp|woff|woff2))", "destination": "/apps/admin/dist/$1" },
+    { "source": "/admin/?(.*)", "destination": "/apps/admin/dist/index.html" },
+    { "source": "/delivery/assets/(.*)", "destination": "/apps/delivery/dist/assets/$1" },
+    { "source": "/delivery/(.*\\.(?:js|css|ico|png|svg|webmanifest|json|jpg|jpeg|webp|woff|woff2))", "destination": "/apps/delivery/dist/$1" },
+    { "source": "/delivery/?(.*)", "destination": "/apps/delivery/dist/index.html" },
+    { "source": "/assets/(.*)", "destination": "/apps/customer/dist/assets/$1" },
+    { "source": "/(.*\\.(?:js|css|ico|png|svg|webmanifest|json|jpg|jpeg|webp|woff|woff2))", "destination": "/apps/customer/dist/$1" },
+    { "source": "/(.*)", "destination": "/apps/customer/dist/index.html" }
+  ]
+}

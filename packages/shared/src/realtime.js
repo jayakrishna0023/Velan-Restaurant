@@ -11,7 +11,8 @@ export function connect(token) {
   if (socket && currentToken === (token || null)) return socket;
   socket?.disconnect();
   currentToken = token || null;
-  socket = io({ auth: { token: currentToken }, transports: ['websocket', 'polling'] });
+  const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL ? import.meta.env.VITE_API_URL : '').replace(/\/$/, '') || undefined;
+  socket = io(apiBase, { auth: { token: currentToken }, transports: ['websocket', 'polling'] });
   const notify = () => statusListeners.forEach((fn) => fn(socket.connected));
   socket.on('connect', notify);
   socket.on('disconnect', notify);

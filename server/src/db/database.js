@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { DB_FILE, UPLOAD_DIR } from '../config.js';
+import { syncToSupabase, pullFromSupabase } from './supabase.js';
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -35,6 +36,7 @@ export const kv = {
   set(key, value) {
     prepared('INSERT INTO kv(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
       .run(key, JSON.stringify(value));
+    syncToSupabase('kv', { key, value });
     return value;
   },
 };
@@ -77,11 +79,13 @@ export function collection(name, indexed = {}) {
     get: (id) => parse(prepared(`SELECT data FROM ${name} WHERE id = ?`).get(id)),
     insert(doc) {
       prepared(`INSERT INTO ${name}(id, data) VALUES (?, ?)`).run(doc.id, JSON.stringify(doc));
+      syncToSupabase(name, doc);
       return doc;
     },
     put(doc) {
       prepared(`INSERT INTO ${name}(id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`)
         .run(doc.id, JSON.stringify(doc));
+      syncToSupabase(name, doc);
       return doc;
     },
     /** Apply a patch object, or a function that mutates/returns the document. */
@@ -90,9 +94,14 @@ export function collection(name, indexed = {}) {
       if (!doc) return null;
       const next = typeof patch === 'function' ? (patch(doc) ?? doc) : Object.assign(doc, patch);
       prepared(`UPDATE ${name} SET data = ? WHERE id = ?`).run(JSON.stringify(next), id);
+      syncToSupabase(name, next);
       return next;
     },
-    remove: (id) => prepared(`DELETE FROM ${name} WHERE id = ?`).run(id).changes > 0,
+    remove: (id) => {
+      const res = prepared(`DELETE FROM ${name} WHERE id = ?`).run(id).changes > 0;
+      if (res) syncToSupabase(name, id, true);
+      return res;
+    },
     find(where = '1=1', params = [], { order, limit, offset } = {}) {
       let q = `SELECT data FROM ${name} WHERE ${where}`;
       if (order) q += ` ORDER BY ${order}`;
@@ -128,3 +137,8 @@ export function nextOrderNumber() {
   kv.set('counter:order', n);
   return n;
 }
+
+// Start background synchronization with Supabase if configured
+setTimeout(() => {
+  pullFromSupabase(db, kv);
+}, 100);
