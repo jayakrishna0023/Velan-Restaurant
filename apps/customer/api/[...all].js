@@ -15,7 +15,16 @@ import {
   computeBill,
   deliveryQuote,
   parseJson,
+  hashToken,
+  allowedNext,
+  canSee,
+  viewOrder,
+  ACTIVE_STATUSES,
 } from './_lib.js';
+
+const deny = (res, status, code, error) => res.status(status).json({ code, error });
+const unauthorized = (res) => deny(res, 401, 'UNAUTHORIZED', 'Not signed in');
+const forbidden = (res) => deny(res, 403, 'FORBIDDEN', 'Not allowed');
 
 export default async function handler(req, res) {
   setCors(req, res);
@@ -145,7 +154,7 @@ export default async function handler(req, res) {
       }
 
       const pw = String(body.password || '');
-      const valid = user.passwordHash ? bcrypt.compareSync(pw, user.passwordHash) : pw === 'admin123' || pw === 'rider123';
+      const valid = !!user.passwordHash && user.active !== false && bcrypt.compareSync(pw, user.passwordHash);
       if (!valid) {
         return res.status(401).json({ code: 'LOGIN_FAILED', error: 'Invalid phone or password' });
       }
@@ -164,6 +173,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ code: 'PHONE_INVALID', error: 'Invalid phone number' });
       }
 
+      const password = String(body.password || '');
+      if (password.length < 6) {
+        return res.status(400).json({ code: 'PASSWORD_SHORT', error: 'Password must be at least 6 characters' });
+      }
+
       const { data: existingRows } = await sb.from('users').select('*');
       const exists = (existingRows || []).map((r) => r.data || r).some((u) => u.role === 'customer' && cleanPhone(u.phone) === phone);
       if (exists) {
@@ -176,7 +190,7 @@ export default async function handler(req, res) {
         role: 'customer',
         name: String(body.name || '').trim().slice(0, 60) || 'Food Lover',
         phone,
-        passwordHash: bcrypt.hashSync(String(body.password || '123456'), 10),
+        passwordHash: bcrypt.hashSync(password, 10),
         active: true,
         createdAt: nowIso(),
       };
@@ -199,6 +213,8 @@ export default async function handler(req, res) {
     // POST /api/auth/logout
     // ----------------------------------------------------
     if (method === 'POST' && pathname === '/api/auth/logout') {
+      const auth = req.headers?.authorization || '';
+      if (auth.startsWith('Bearer ')) await sb.from('sessions').delete().eq('id', hashToken(auth.slice(7).trim()));
       return res.status(200).json({ ok: true });
     }
 
@@ -238,6 +254,8 @@ export default async function handler(req, res) {
 
       if (method === 'DELETE') {
         const id = pathname.split('/').pop();
+        const { data: aRow } = await sb.from('addresses').select('*').eq('id', id).maybeSingle();
+        if (!aRow || (aRow.data || aRow).userId !== user.id) return deny(res, 404, 'NOT_FOUND', 'Address not found');
         await sb.from('addresses').delete().eq('id', id);
         return res.status(200).json({ ok: true });
       }
@@ -251,23 +269,18 @@ export default async function handler(req, res) {
 
       // GET /api/orders
       if (method === 'GET') {
+        if (!user) return unauthorized(res);
         const { data: rows } = await sb.from('orders').select('*');
-        let list = (rows || []).map((r) => r.data || r);
-
-        if (user?.role === 'customer') {
-          list = list.filter((o) => o.customerId === user.id || (user.phone && cleanPhone(o.phone) === cleanPhone(user.phone)));
-        } else if (user?.role === 'rider') {
-          list = list.filter((o) => o.riderId === user.id || (!o.riderId && ['accepted', 'preparing', 'ready'].includes(o.status)));
-        }
+        let list = (rows || []).map((r) => r.data || r).filter((o) => canSee(user, o));
 
         // Active filter
         if (urlObj.searchParams.get('active') === 'true') {
-          list = list.filter((o) => ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status));
+          list = list.filter((o) => ACTIVE_STATUSES.includes(o.status));
         }
 
         list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
         const limit = Number(urlObj.searchParams.get('limit')) || 100;
-        return res.status(200).json({ orders: list.slice(0, limit) });
+        return res.status(200).json({ orders: list.slice(0, limit).map((o) => viewOrder(o, user)) });
       }
 
       // POST /api/orders (place order)
@@ -279,31 +292,54 @@ export default async function handler(req, res) {
         const { data: menuRows } = await sb.from('menu').select('*');
         const menuMap = new Map((menuRows || []).map((r) => [r.id, r.data || r]));
 
-        const lines = (body.items || []).map((it) => {
+        if (settings.isOpen === false) return deny(res, 409, 'STORE_CLOSED', 'The restaurant is not taking orders right now');
+        const type = body.type === 'pickup' ? 'pickup' : 'delivery';
+
+        // Prices and names always come from the menu, never from the browser.
+        const lines = [];
+        for (const it of Array.isArray(body.items) ? body.items : []) {
           const m = menuMap.get(it.id);
-          return {
-            id: it.id,
-            name: m?.name || it.name,
-            nameTa: m?.nameTa || it.nameTa || '',
-            price: m?.price || it.price || 0,
-            qty: Number(it.qty) || 1,
-            veg: m?.veg ?? it.veg,
-            image: m?.image || it.image || '',
-            note: it.note || '',
-          };
-        });
+          const qty = Math.max(1, Math.min(50, Math.round(Number(it.qty)) || 1));
+          if (!m || m.available === false || (typeof m.stock === 'number' && m.stock < qty)) {
+            return res.status(409).json({ code: 'ITEM_UNAVAILABLE', error: 'A dish is no longer available', params: { name: m?.name || 'A dish' } });
+          }
+          lines.push({ id: m.id, name: m.name, nameTa: m.nameTa || '', price: Number(m.price) || 0, qty, veg: m.veg, image: m.image || '', note: String(it.note || '').slice(0, 120) });
+        }
+        if (!lines.length) return deny(res, 400, 'CART_EMPTY', 'Your cart is empty');
 
         const subtotal = lines.reduce((s, l) => s + l.price * l.qty, 0);
         let quote = null;
-        if (body.type === 'delivery' && body.address?.lat && body.address?.lng) {
-          quote = deliveryQuote(settings, body.address, subtotal);
+        if (type === 'delivery') {
+          const lat = Number(body.address?.lat);
+          const lng = Number(body.address?.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng) || (!lat && !lng)) return deny(res, 400, 'ADDRESS_REQUIRED', 'Choose a delivery location');
+          quote = deliveryQuote(settings, { lat, lng }, subtotal);
+          if (!quote.deliverable) return deny(res, 409, 'OUT_OF_RANGE', 'We do not deliver to this location yet');
+          if (subtotal < (settings.minOrder || 150)) return res.status(409).json({ code: 'MIN_ORDER', error: 'Order is below the minimum', params: { amount: settings.minOrder || 150 } });
         }
 
-        const fee = body.type === 'delivery' ? (quote?.fee ?? (settings.baseFee || 25)) : 0;
-        const bill = computeBill({ lines, settings, type: body.type, deliveryFee: fee, coupon: null });
+        let coupon = null;
+        if (body.coupon) {
+          const { data: coupRow } = await sb.from('coupons').select('*').eq('id', body.coupon).maybeSingle();
+          const c = coupRow?.data || coupRow;
+          if (c && c.active && (!c.minOrder || subtotal >= c.minOrder)) coupon = c;
+        }
 
-        const { count } = await sb.from('orders').select('*', { count: 'exact', head: true });
-        const orderNumber = (count || 0) + 101;
+        const fee = type === 'delivery' ? quote.fee : 0;
+        const bill = computeBill({ lines, settings, type, deliveryFee: fee, coupon });
+        if (coupon) bill.couponCode = coupon.code || coupon.id;
+
+        // Same counter the Express server uses (kv 'counter:order').
+        const { data: counterRow } = await sb.from('kv').select('*').eq('key', 'counter:order').maybeSingle();
+        const orderNumber = (Number(counterRow?.value) || 1000) + 1;
+        await sb.from('kv').upsert({ key: 'counter:order', value: orderNumber });
+
+        // Take the dishes out of today's stock.
+        await Promise.all(lines.map((l) => {
+          const m = menuMap.get(l.id);
+          if (typeof m.stock !== 'number') return null;
+          return sb.from('menu').upsert({ id: m.id, data: { ...m, stock: Math.max(0, m.stock - l.qty), sold: (m.sold || 0) + l.qty } });
+        }));
         const oId = newId('ord');
         const now = nowIso();
 
@@ -311,7 +347,7 @@ export default async function handler(req, res) {
           id: oId,
           number: orderNumber,
           source: 'online',
-          type: body.type === 'pickup' ? 'pickup' : 'delivery',
+          type,
           status: 'placed',
           customerId: user?.id || null,
           customerName: user?.name || body.customerName || 'Customer',
@@ -319,7 +355,7 @@ export default async function handler(req, res) {
           items: lines,
           bill,
           payment: { method: body.paymentMethod === 'upi' ? 'upi' : 'cash', status: 'pending' },
-          address: body.address || null,
+          address: type === 'delivery' ? body.address : null,
           distanceKm: quote?.distanceKm || null,
           otp: randomOtp(),
           riderId: null,
@@ -333,7 +369,7 @@ export default async function handler(req, res) {
         };
 
         await sb.from('orders').upsert({ id: oId, data: order });
-        return res.status(201).json(order);
+        return res.status(201).json(viewOrder(order, user));
       }
     }
 
@@ -349,23 +385,43 @@ export default async function handler(req, res) {
       if (!row) return res.status(404).json({ code: 'NOT_FOUND', error: 'Order not found' });
       const order = row.data || row;
       const user = await getUserFromReq(req);
+      if (!user) return unauthorized(res);
+      if (!canSee(user, order)) return deny(res, 404, 'NOT_FOUND', 'Order not found');
 
       if (!action) {
         // GET /api/orders/:id
-        return res.status(200).json(order);
+        return res.status(200).json(viewOrder(order, user));
       }
 
       const body = await parseJson(req);
       const now = nowIso();
+      const isAdmin = user.role === 'admin';
+      const isOwnRider = user.role === 'rider' && order.riderId === user.id;
+      const isOwnCustomer = user.role === 'customer' && canSee(user, order);
 
       if (action === 'status') {
         const nextStatus = body.status;
+        if (user.role === 'rider' && !isOwnRider) return deny(res, 403, 'NOT_ASSIGNED', 'This order is not assigned to you');
+        if (!allowedNext(order, user.role).includes(nextStatus)) return deny(res, 409, 'BAD_TRANSITION', 'That status change is not allowed');
+        if (nextStatus === 'delivered' && user.role === 'rider' && String(body.otp || '').trim() !== order.otp) {
+          return deny(res, 400, 'OTP_WRONG', 'Wrong OTP');
+        }
         order.status = nextStatus;
-        if (body.prepMins) order.prepMins = body.prepMins;
+        if (body.prepMins) order.prepMins = Math.max(5, Math.min(180, Math.round(Number(body.prepMins)) || 20));
+        if (nextStatus === 'out_for_delivery') order.pickedAt = now;
+        if (nextStatus === 'delivered') {
+          order.deliveredAt = now;
+          if (order.payment?.status !== 'paid') order.payment = { ...order.payment, status: 'paid', paidAt: now };
+        }
+        if (['rejected', 'cancelled'].includes(nextStatus)) {
+          order.cancelReason = String(body.reason || '').slice(0, 200);
+          order.cancelledBy = user.role;
+        }
         order.timeline = order.timeline || [];
-        order.timeline.push({ status: nextStatus, at: now, by: user?.role || 'admin' });
+        order.timeline.push({ status: nextStatus, at: now, by: user.role, name: user.name });
         order.updatedAt = now;
       } else if (action === 'assign') {
+        if (!isAdmin) return forbidden(res);
         order.riderId = body.riderId || null;
         if (body.riderId) {
           const { data: rRow } = await sb.from('users').select('*').eq('id', body.riderId).maybeSingle();
@@ -378,30 +434,39 @@ export default async function handler(req, res) {
         }
         order.updatedAt = now;
       } else if (action === 'paid') {
+        if (!isAdmin) return forbidden(res);
         order.payment = { ...order.payment, status: 'paid', paidAt: now };
         order.updatedAt = now;
       } else if (action === 'arrived') {
+        if (!isOwnRider || order.status !== 'out_for_delivery') return forbidden(res);
         order.arrivedAt = now;
         order.updatedAt = now;
       } else if (action === 'cancel') {
+        if (!isOwnCustomer || !allowedNext(order, 'customer').includes('cancelled')) return deny(res, 409, 'CANNOT_CANCEL', 'This order can no longer be cancelled');
         order.status = 'cancelled';
-        order.cancelReason = body.reason || 'Cancelled by customer';
+        order.cancelReason = String(body.reason || 'Cancelled by customer').slice(0, 200);
         order.timeline = order.timeline || [];
         order.timeline.push({ status: 'cancelled', at: now, by: 'customer' });
         order.updatedAt = now;
       } else if (action === 'rate') {
+        if (!isOwnCustomer || order.status !== 'delivered') return forbidden(res);
         order.rating = { food: body.food, delivery: body.delivery, review: body.review, tags: body.tags, at: now };
         order.updatedAt = now;
+      } else {
+        return deny(res, 404, 'NOT_FOUND', 'Unknown action');
       }
 
       await sb.from('orders').upsert({ id: orderId, data: order });
-      return res.status(200).json(order);
+      return res.status(200).json(viewOrder(order, user));
     }
 
     // ----------------------------------------------------
     // ADMIN ENDPOINTS
     // ----------------------------------------------------
     if (pathname.startsWith('/api/admin/')) {
+      const admin = await getUserFromReq(req);
+      if (!admin) return unauthorized(res);
+      if (admin.role !== 'admin') return forbidden(res);
       const sub = pathname.slice('/api/admin/'.length);
 
       // GET /api/admin/menu
