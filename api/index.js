@@ -24,10 +24,14 @@ async function ensureReady() {
 export default async function handler(req, res) {
   await ensureReady();
 
-  // In Vercel serverless functions, req.url may have /api stripped by routing rewrites.
-  // Ensure it has the /api prefix so Express /api router handles it correctly.
-  if (req.url && !req.url.startsWith('/api')) {
+  // On Vercel, the original path is preserved in x-matched-path or req.url
+  const matched = req.headers?.['x-matched-path'];
+  if (matched && matched.startsWith('/api')) {
+    const query = req.url?.includes('?') && !matched.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    req.url = matched + query;
+  } else if (req.url && !req.url.startsWith('/api')) {
     req.url = `/api${req.url.startsWith('/') ? '' : '/'}${req.url}`;
   }
+
   return app(req, res);
 }
