@@ -6,7 +6,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://wpjkccggvbmvfgiusczf.s
 const PUBLIC_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwamtjY2dndmJtdmZnaXVzY3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNzI3NjEsImV4cCI6MjEwODY0ODc2MX0.bNIQ5rbFMWORoHtNtLoQpYsvK_V5AUYUhNIDTEyNPQQ';
 // Server-side key. Must be the service-role (secret) key once the anon role is locked
 // out of the tables; the public anon key only works for public reads.
-const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || PUBLIC_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || PUBLIC_ANON_KEY;
 if (!process.env.SUPABASE_KEY && !process.env.SUPABASE_SECRET_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('[api] SUPABASE_SERVICE_ROLE_KEY is not set: writes to Supabase will be refused.');
 }
