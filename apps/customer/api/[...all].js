@@ -412,6 +412,12 @@ export default async function handler(req, res) {
         if (nextStatus === 'delivered') {
           order.deliveredAt = now;
           if (order.payment?.status !== 'paid') order.payment = { ...order.payment, status: 'paid', paidAt: now };
+          if (order.riderId && order.type === 'delivery') {
+            const { data: kvRow } = await sb.from('kv').select('*').eq('key', 'settings').maybeSingle();
+            const st = kvRow?.value || {};
+            order.riderPay = Math.round((st.riderPayBase || 0) + (st.riderPayPerKm || 0) * (order.distanceKm || 0));
+            if (order.payment?.method === 'cash') order.cashSettled = false;
+          }
         }
         if (['rejected', 'cancelled'].includes(nextStatus)) {
           order.cancelReason = String(body.reason || '').slice(0, 200);
@@ -587,9 +593,55 @@ export default async function handler(req, res) {
       if (!user || user.role !== 'rider') return res.status(403).json({ code: 'FORBIDDEN', error: 'Rider access required' });
 
       if (pathname === '/api/rider/me') {
-        const { data: rows } = await sb.from('orders').select('*');
-        const orders = (rows || []).map((r) => r.data || r).filter((o) => o.riderId === user.id && ['out_for_delivery', 'ready', 'preparing', 'accepted'].includes(o.status));
-        return res.status(200).json({ rider: publicUser(user), activeOrders: orders });
+        // Same shape as riderSummary() in server/src/services/riders.js.
+        const [{ data: rows }, { data: kvRow }, { data: setRows }] = await Promise.all([
+          sb.from('orders').select('*'),
+          sb.from('kv').select('*').eq('key', 'settings').maybeSingle(),
+          sb.from('settlements').select('*'),
+        ]);
+        const settings = kvRow?.value || {};
+        const mine = (rows || []).map((r) => r.data || r).filter((o) => o.riderId === user.id);
+        const delivered = mine.filter((o) => o.status === 'delivered');
+        const stats = (from) => {
+          const list = delivered.filter((o) => (o.day || '') >= from);
+          const sum = (f) => list.reduce((acc, o) => acc + (Number(f(o)) || 0), 0);
+          const mins = list.filter((o) => o.pickedAt && o.deliveredAt).map((o) => (new Date(o.deliveredAt) - new Date(o.pickedAt)) / 60000);
+          return {
+            deliveries: list.length,
+            km: Math.round(sum((o) => o.distanceKm) * 10) / 10,
+            earnings: sum((o) => o.riderPay),
+            cash: sum((o) => (o.payment?.method === 'cash' ? o.bill?.total : 0)),
+            upi: sum((o) => (o.payment?.method === 'upi' ? o.bill?.total : 0)),
+            avgMins: mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : null,
+          };
+        };
+        const days = [];
+        for (let i = 6; i >= 0; i -= 1) {
+          const d = dayKey(Date.now() - i * 864e5);
+          const list = delivered.filter((o) => o.day === d);
+          days.push({
+            day: d,
+            deliveries: list.length,
+            earnings: list.reduce((acc, o) => acc + (o.riderPay || 0), 0),
+            km: Math.round(list.reduce((acc, o) => acc + (o.distanceKm || 0), 0) * 10) / 10,
+          });
+        }
+        const rated = delivered.filter((o) => o.rating?.delivery);
+        const byNewest = (a, b) => (b.createdAt || '').localeCompare(a.createdAt || '');
+        return res.status(200).json({
+          rider: { ...publicUser(user), activeOrders: mine.filter((o) => ACTIVE_STATUSES.includes(o.status)).length },
+          today: stats(dayKey()),
+          week: stats(dayKey(Date.now() - 6 * 864e5)),
+          days,
+          rating: rated.length ? { avg: Math.round((rated.reduce((acc, o) => acc + o.rating.delivery, 0) / rated.length) * 10) / 10, count: rated.length } : { avg: null, count: 0 },
+          cashInHand: delivered.filter((o) => o.cashSettled === false).reduce((acc, o) => acc + (o.bill?.total || 0), 0),
+          settlements: (setRows || []).map((r) => r.data || r).filter((x) => x.riderId === user.id).sort(byNewest).slice(0, 10),
+          recent: delivered.sort(byNewest).slice(0, 30).map((o) => ({
+            id: o.id, number: o.number, deliveredAt: o.deliveredAt, total: o.bill?.total, method: o.payment?.method,
+            distanceKm: o.distanceKm, riderPay: o.riderPay, customerName: o.customerName, area: o.address?.line || '', rating: o.rating?.delivery || null,
+          })),
+          pay: { base: settings.riderPayBase || 0, perKm: settings.riderPayPerKm || 0 },
+        });
       }
 
       if (pathname === '/api/rider/online') {
