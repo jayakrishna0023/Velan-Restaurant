@@ -3,7 +3,13 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://wpjkccggvbmvfgiusczf.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwamtjY2dndmJtdmZnaXVzY3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNzI3NjEsImV4cCI6MjEwODY0ODc2MX0.bNIQ5rbFMWORoHtNtLoQpYsvK_V5AUYUhNIDTEyNPQQ';
+const PUBLIC_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwamtjY2dndmJtdmZnaXVzY3pmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNzI3NjEsImV4cCI6MjEwODY0ODc2MX0.bNIQ5rbFMWORoHtNtLoQpYsvK_V5AUYUhNIDTEyNPQQ';
+// Server-side key. Must be the service-role (secret) key once the anon role is locked
+// out of the tables; the public anon key only works for public reads.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || PUBLIC_ANON_KEY;
+if (!process.env.SUPABASE_KEY && !process.env.SUPABASE_SECRET_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('[api] SUPABASE_SERVICE_ROLE_KEY is not set: writes to Supabase will be refused.');
+}
 
 let client = null;
 export function getSb() {
@@ -34,12 +40,49 @@ export function handleOptions(req, res) {
 export const hashToken = (t) => crypto.createHash('sha256').update(t).digest('base64url');
 export const newId = (prefix) => `${prefix}_${crypto.randomBytes(7).toString('base64url')}`;
 export const nowIso = () => new Date().toISOString();
-export const randomOtp = () => String(Math.floor(1000 + Math.random() * 9000));
+export const randomOtp = () => String(crypto.randomInt(1000, 10000));
 
 export function publicUser(u) {
   if (!u) return null;
   const { passwordHash, ...rest } = u;
   return rest;
+}
+
+// Same rules as packages/shared/src/domain.js (copied so the function bundles on its own).
+export const STATUSES = ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
+export const CLOSED_STATUSES = ['delivered', 'rejected', 'cancelled'];
+export const ACTIVE_STATUSES = STATUSES.slice(0, 5);
+
+/** Which statuses an actor may move an order to from its current status. */
+export function allowedNext(order, role) {
+  const { status, type } = order;
+  if (CLOSED_STATUSES.includes(status)) return [];
+  if (role === 'customer') return status === 'placed' ? ['cancelled'] : [];
+  if (role === 'rider') {
+    if (type !== 'delivery') return [];
+    if (['accepted', 'preparing', 'ready'].includes(status)) return ['out_for_delivery'];
+    if (status === 'out_for_delivery') return ['delivered'];
+    return [];
+  }
+  const i = STATUSES.indexOf(status);
+  const forward = STATUSES.slice(i + 1).filter((s) => !(type !== 'delivery' && s === 'out_for_delivery'));
+  return [...forward, ...(status === 'placed' ? ['rejected'] : []), 'cancelled'];
+}
+
+/** Whether a signed-in user may see an order. */
+export function canSee(user, o) {
+  if (!user || !o) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'rider') return o.riderId === user.id || (!o.riderId && o.type === 'delivery' && ['accepted', 'preparing', 'ready'].includes(o.status));
+  return o.customerId === user.id || (!!user.phone && cleanPhone(o.phone) === cleanPhone(user.phone));
+}
+
+/** The order as a given viewer may see it (riders never see the OTP). */
+export function viewOrder(o, user) {
+  const out = { ...o };
+  if (user?.role === 'rider') delete out.otp;
+  if (user?.role === 'customer') { delete out.riderPay; delete out.cashSettled; }
+  return out;
 }
 
 export const cleanPhone = (p) => String(p || '').replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');

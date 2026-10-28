@@ -102,56 +102,57 @@ CREATE TABLE IF NOT EXISTS activity (
 CREATE INDEX IF NOT EXISTS activity_at_idx ON activity(at);
 
 -- ROW LEVEL SECURITY & POLICIES
+-- The anon key is public (it ships in the browser): it may only read the menu,
+-- categories, settings and public offers. Everything else goes through the API
+-- with the service-role key.
 ALTER TABLE kv ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_kv" ON kv;
 CREATE POLICY "service_role_kv" ON kv FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_kv" ON kv;
-CREATE POLICY "anon_all_kv" ON kv FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon_read_settings" ON kv;
+CREATE POLICY "anon_read_settings" ON kv FOR SELECT TO anon USING (key = 'settings');
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_users" ON users;
 CREATE POLICY "service_role_users" ON users FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_users" ON users;
-CREATE POLICY "anon_all_users" ON users FOR ALL TO anon USING (true) WITH CHECK (true);
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_sessions" ON sessions;
 CREATE POLICY "service_role_sessions" ON sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_sessions" ON sessions;
-CREATE POLICY "anon_all_sessions" ON sessions FOR ALL TO anon USING (true) WITH CHECK (true);
 ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_addresses" ON addresses;
 CREATE POLICY "service_role_addresses" ON addresses FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_addresses" ON addresses;
-CREATE POLICY "anon_all_addresses" ON addresses FOR ALL TO anon USING (true) WITH CHECK (true);
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_categories" ON categories;
 CREATE POLICY "service_role_categories" ON categories FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_categories" ON categories;
-CREATE POLICY "anon_all_categories" ON categories FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon_read_categories" ON categories;
+CREATE POLICY "anon_read_categories" ON categories FOR SELECT TO anon USING (true);
 ALTER TABLE menu ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_menu" ON menu;
 CREATE POLICY "service_role_menu" ON menu FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_menu" ON menu;
-CREATE POLICY "anon_all_menu" ON menu FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon_read_menu" ON menu;
+CREATE POLICY "anon_read_menu" ON menu FOR SELECT TO anon USING (true);
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_orders" ON orders;
 CREATE POLICY "service_role_orders" ON orders FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_orders" ON orders;
-CREATE POLICY "anon_all_orders" ON orders FOR ALL TO anon USING (true) WITH CHECK (true);
 ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_coupons" ON coupons;
 CREATE POLICY "service_role_coupons" ON coupons FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_coupons" ON coupons;
-CREATE POLICY "anon_all_coupons" ON coupons FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon_read_public_coupons" ON coupons;
+CREATE POLICY "anon_read_public_coupons" ON coupons FOR SELECT TO anon USING (coalesce((data->>'active')::boolean, false) AND coalesce((data->>'public')::boolean, false));
 ALTER TABLE settlements ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_settlements" ON settlements;
 CREATE POLICY "service_role_settlements" ON settlements FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_settlements" ON settlements;
-CREATE POLICY "anon_all_settlements" ON settlements FOR ALL TO anon USING (true) WITH CHECK (true);
 ALTER TABLE activity ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "service_role_activity" ON activity;
 CREATE POLICY "service_role_activity" ON activity FOR ALL TO service_role USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "anon_all_activity" ON activity;
-CREATE POLICY "anon_all_activity" ON activity FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- ====================================================================
 -- SEED DATA (Pre-populates categories, menu, coupons, settings & admin)
@@ -201,8 +202,8 @@ INSERT INTO kv (key, value) VALUES ('settings', '{"name":"Velan Biryani Center",
 INSERT INTO kv (key, value) VALUES ('counter:order', '1000'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 INSERT INTO kv (key, value) VALUES ('seeded', 'true'::jsonb) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
-INSERT INTO users (id, data) VALUES ('admin_kgvAV8j5JQ', '{"id":"admin_kgvAV8j5JQ","role":"admin","name":"Velan Admin","phone":"9000000000","passwordHash":"$2b$10$VoSqG4IpJCTtAoS.APtBQesXc4nGnoMoqzmsL38Uj8s4DzuUrGAyW","active":true,"createdAt":"2026-10-23T13:12:23.098Z"}') ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;
-INSERT INTO users (id, data) VALUES ('rider_HlPDkvBTgw', '{"id":"rider_HlPDkvBTgw","role":"rider","name":"Murugan","phone":"9000000001","passwordHash":"$2b$10$stzPqifdIqCznhgRCvRM4OHwEjTNCgkJ1P0pm4KALlYj352nzXy5K","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 AK 2231","online":false}') ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;
-INSERT INTO users (id, data) VALUES ('rider_DTpvPcZ9Sw', '{"id":"rider_DTpvPcZ9Sw","role":"rider","name":"Karthik","phone":"9000000002","passwordHash":"$2b$10$PDEaT5dbmXqNxPvM/hmDD.Qpbq2yDadsmgLqUl3hKBSESxTQ9/tjO","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 BC 0918","online":true,"onlineSince":"2026-10-27T05:10:08.802Z","location":{"lat":12.955142,"lng":77.702739,"heading":null,"speed":null,"accuracy":128,"source":"gps","at":"2026-10-27T05:16:36.401Z"}}') ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;
-INSERT INTO users (id, data) VALUES ('rider_lerngIaqvw', '{"id":"rider_lerngIaqvw","role":"rider","name":"Senthil","phone":"9000000003","passwordHash":"$2b$10$yDSzYtlCkEeiv2p0TZRafOsHddWLjFCkAHax./C9JySZ2dglUp7mu","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 AZ 5504","online":false,"onlineSince":null,"location":{"lat":11.0026522,"lng":78.1755354,"heading":300,"speed":6,"accuracy":8,"source":"gps","at":"2026-10-27T05:18:26.977Z"}}') ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;
-INSERT INTO users (id, data) VALUES ('cus_wqx5WONZfA', '{"id":"cus_wqx5WONZfA","role":"customer","name":"Kavya Raman","phone":"9876500011","passwordHash":"$2b$08$3gun.F6UbD2Tw4ENK0JnyO2lwzcDToZJvUWJhNKH1z7XNMqCQEvsG","active":true,"createdAt":"2026-08-24T13:12:23.406Z"}') ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;
+INSERT INTO users (id, data) VALUES ('admin_kgvAV8j5JQ', '{"id":"admin_kgvAV8j5JQ","role":"admin","name":"Velan Admin","phone":"9000000000","passwordHash":"$2b$10$VoSqG4IpJCTtAoS.APtBQesXc4nGnoMoqzmsL38Uj8s4DzuUrGAyW","active":true,"createdAt":"2026-10-23T13:12:23.098Z"}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, data) VALUES ('rider_HlPDkvBTgw', '{"id":"rider_HlPDkvBTgw","role":"rider","name":"Murugan","phone":"9000000001","passwordHash":"$2b$10$stzPqifdIqCznhgRCvRM4OHwEjTNCgkJ1P0pm4KALlYj352nzXy5K","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 AK 2231","online":false}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, data) VALUES ('rider_DTpvPcZ9Sw', '{"id":"rider_DTpvPcZ9Sw","role":"rider","name":"Karthik","phone":"9000000002","passwordHash":"$2b$10$PDEaT5dbmXqNxPvM/hmDD.Qpbq2yDadsmgLqUl3hKBSESxTQ9/tjO","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 BC 0918","online":true,"onlineSince":"2026-10-27T05:10:08.802Z","location":{"lat":12.955142,"lng":77.702739,"heading":null,"speed":null,"accuracy":128,"source":"gps","at":"2026-10-27T05:16:36.401Z"}}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, data) VALUES ('rider_lerngIaqvw', '{"id":"rider_lerngIaqvw","role":"rider","name":"Senthil","phone":"9000000003","passwordHash":"$2b$10$yDSzYtlCkEeiv2p0TZRafOsHddWLjFCkAHax./C9JySZ2dglUp7mu","active":true,"createdAt":"2026-10-23T13:12:23.098Z","vehicle":"TN 47 AZ 5504","online":false,"onlineSince":null,"location":{"lat":11.0026522,"lng":78.1755354,"heading":300,"speed":6,"accuracy":8,"source":"gps","at":"2026-10-27T05:18:26.977Z"}}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, data) VALUES ('cus_wqx5WONZfA', '{"id":"cus_wqx5WONZfA","role":"customer","name":"Kavya Raman","phone":"9876500011","passwordHash":"$2b$08$3gun.F6UbD2Tw4ENK0JnyO2lwzcDToZJvUWJhNKH1z7XNMqCQEvsG","active":true,"createdAt":"2026-08-24T13:12:23.406Z"}') ON CONFLICT (id) DO NOTHING;
