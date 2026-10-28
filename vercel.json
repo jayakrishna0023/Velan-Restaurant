@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/admin/assets/(.*)", "destination": "/apps/admin/dist/assets/$1" },
     { "source": "/admin/(.*\\.(?:js|css|ico|png|svg|webmanifest|json|jpg|jpeg|webp|woff|woff2))", "destination": "/apps/admin/dist/$1" },
     { "source": "/admin/?(.*)", "destination": "/apps/admin/dist/index.html" },
