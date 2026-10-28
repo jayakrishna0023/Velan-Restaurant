@@ -255,7 +255,7 @@ export default async function handler(req, res) {
         let list = (rows || []).map((r) => r.data || r);
 
         if (user?.role === 'customer') {
-          list = list.filter((o) => o.customerId === user.id);
+          list = list.filter((o) => o.customerId === user.id || (user.phone && cleanPhone(o.phone) === cleanPhone(user.phone)));
         } else if (user?.role === 'rider') {
           list = list.filter((o) => o.riderId === user.id || (!o.riderId && ['accepted', 'preparing', 'ready'].includes(o.status)));
         }
