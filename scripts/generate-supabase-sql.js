@@ -107,13 +107,23 @@ CREATE INDEX IF NOT EXISTS activity_at_idx ON activity(at);
 -- ROW LEVEL SECURITY & POLICIES
 `;
 
+// The anon key is public (it ships in the browser): it may only read the menu,
+// categories, settings and public offers. Everything else goes through the API
+// with the service-role key.
+const anonRead = {
+  kv: ['anon_read_settings', "key = 'settings'"],
+  categories: ['anon_read_categories', 'true'],
+  menu: ['anon_read_menu', 'true'],
+  coupons: ['anon_read_public_coupons', "coalesce((data->>'active')::boolean, false) AND coalesce((data->>'public')::boolean, false)"],
+};
+
 const tables = ['kv', 'users', 'sessions', 'addresses', 'categories', 'menu', 'orders', 'coupons', 'settlements', 'activity'];
 for (const t of tables) {
   sql += `ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY;\n`;
   sql += `DROP POLICY IF EXISTS "service_role_${t}" ON ${t};\n`;
   sql += `CREATE POLICY "service_role_${t}" ON ${t} FOR ALL TO service_role USING (true) WITH CHECK (true);\n`;
   sql += `DROP POLICY IF EXISTS "anon_all_${t}" ON ${t};\n`;
-  sql += `CREATE POLICY "anon_all_${t}" ON ${t} FOR ALL TO anon USING (true) WITH CHECK (true);\n`;
+  if (anonRead[t]) sql += `DROP POLICY IF EXISTS "${anonRead[t][0]}" ON ${t};\nCREATE POLICY "${anonRead[t][0]}" ON ${t} FOR SELECT TO anon USING (${anonRead[t][1]});\n`;
 }
 
 sql += '\n-- ====================================================================\n';
@@ -154,12 +164,12 @@ sql += `INSERT INTO kv (key, value) VALUES ('seeded', 'true'::jsonb) ON CONFLICT
 // Users
 const users = db.users.find("role IN ('admin', 'rider')");
 for (const u of users) {
-  sql += `INSERT INTO users (id, data) VALUES ('${u.id}', ${escape(u)}) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;\n`;
+  sql += `INSERT INTO users (id, data) VALUES ('${u.id}', ${escape(u)}) ON CONFLICT (id) DO NOTHING;\n`;
 }
 
 const demoCus = db.users.findOne("phone = '9876500011'");
 if (demoCus) {
-  sql += `INSERT INTO users (id, data) VALUES ('${demoCus.id}', ${escape(demoCus)}) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data;\n`;
+  sql += `INSERT INTO users (id, data) VALUES ('${demoCus.id}', ${escape(demoCus)}) ON CONFLICT (id) DO NOTHING;\n`;
 }
 
 fs.writeFileSync('supabase_schema.sql', sql, 'utf8');
